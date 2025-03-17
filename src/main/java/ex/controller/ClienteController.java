@@ -1,10 +1,11 @@
 package ex.controller;
 
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
+
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import ex.model.Cliente;
@@ -39,12 +41,12 @@ public class ClienteController {
 	}
 	
 	@GetMapping
-	public List<ClienteFormRequest> getLista(){
-		return repository.findAll()
-				.stream()
-				.map(ClienteFormRequest::fromModel)
-				.collect(Collectors.toList());
-		
+	public ResponseEntity<Page<ClienteFormRequest>> getLista(
+	        @RequestParam(value="page", defaultValue="0") int page) {
+	    PageRequest pageable = PageRequest.of(page, 4);
+	    Page<ClienteFormRequest> clientesPage = repository.findAll(pageable)
+	            .map(ClienteFormRequest::fromModel);
+	    return ResponseEntity.ok(clientesPage);
 	}
 	
 	@GetMapping("/{id}")
@@ -83,4 +85,14 @@ public class ClienteController {
 	    repository.deleteById(id);
 	    return ResponseEntity.noContent().build();
 	}
+	
+	@GetMapping("/search")
+	public ResponseEntity<Page<ClienteFormRequest>> searchClientes(
+            @RequestParam("nome") String nome,
+            @RequestParam(value="page", defaultValue="0") int page) {
+	    PageRequest pageable = PageRequest.of(page, 4);
+	    Page<ClienteFormRequest> clientesPage = repository.findByNomeContainingIgnoreCase(nome, pageable)
+	            .map(ClienteFormRequest::fromModel);
+	    return ResponseEntity.ok(clientesPage);
+    }
 }
